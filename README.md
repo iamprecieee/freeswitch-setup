@@ -293,10 +293,10 @@ For Twilio trial accounts, you must first verify any phone number you want to ca
 
 ```bash
 # Make a test call (replace with a verified number)
-fs_cli -x "originate sofia/gateway/twilio/+1234567890 &echo"
+fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/TwilioTrunk0001/YOUR_VERIFIED_PHONE_NUMBER &echo"
 ```
-If using a full Twilio account (not a trial), you can call any number:
+
 ```bash
 # Format for E.164 (with country code, no spaces or hyphens)
-fs_cli -x "originate {origination_caller_id_number=+18149998410}sofia/
+fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/TwilioTrunk0001/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
 ```
