@@ -15,20 +15,23 @@ This comprehensive guide will walk you through setting up FreeSWITCH on an AWS E
 ### Provision a Debian Instance
 
 - Launch a Debian EC2 instance with at least 1GB RAM (t2.micro or larger)
+![EC2 basic config](screenshots/Screenshot1.png)
 - Configure Security Group with the following ports:
     - SSH (22) - TCP
     - SIP (5080) - TCP and UDP
     - RTP Media (16384-32768) - UDP
+    ![Security group config](screenshots/Screenshot2.png)
 
 ### Configure Security Group
 
 ```bash
 # From AWS Console:
-# EC2 Dashboard > Security Groups > Edit inbound rules > Add rule
+# EC2 Dashboard > Network Settings > Security Groups > Edit inbound rules > Add rule
 # Rule 1: Custom TCP, Port 5080, Source 0.0.0.0/0
 # Rule 2: Custom UDP, Port 5080, Source 0.0.0.0/0
 # Rule 3: Custom UDP, Port Range 16384-32768, Source 0.0.0.0/0
 ```
+
 
 ### Connect to Your Instance
 ```bash
@@ -87,6 +90,8 @@ echo "deb-src [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] \
 # Update package lists
 sudo apt update
 ```
+- `YOURSIGNALWIRETOKEN` can be created/retrieved from the signalwire dashboard under "personal access tokens".
+![Signalwire profile dropdown](screenshots/Screenshot3.png) ![Create PAT](screenshots/Screenshot4.png)
 
 ### Install FreeSWITCH from Source
 
@@ -211,27 +216,33 @@ sudo sed -i "s/local_ip_v4=.*/local_ip_v4=YOUR_SERVER_PUBLIC_IP/" /usr/local/fre
 ### Create a Twilio Account
 
 - Sign up at Twilio.com
-- Purchase a phone number from your Twilio Console
+- Get a phone number from your Twilio Console
+![Get twilio number](screenshots/Screenshot5.png)
 
 ### Configure Elastic SIP Trunking
 
-- From your Twilio Console, navigate to "Explore Products" → "Voice & Video" → "Elastic SIP Trunking"
+- From your Twilio Console, navigate to "Explore Products" → "Super Network" → "Elastic SIP Trunking"
+![Elastic SIP trunking section](screenshots/Screenshot6.png)
 - Click on "Trunks" and create a new SIP trunk with a descriptive name
+![Trunk](screenshots/Screenshot7.png)
 
 ### Configure your trunk:
 
 #### Termination (Outbound Calling)
 - In your trunk menu, go to "Termination"
+![Termination](screenshots/Screenshot8.png)
 - Create a Termination SIP URI (e.g., "freeswitchtest")
 - Under "Authentication", create a new IP Access Control List:
     - Add a friendly name
     - Enter your EC2 instance's public IP with CIDR /32
     - Save the configuration
+    ![IP ACL](screenshots/Screenshot9.png)
 
 #### Origination (Inbound Calling)
 - In your trunk menu, go to "Origination"
 - Add a new Origination URI in the format: `sip:YOUR_SERVER_PUBLIC_IP`
 - Save the configuration
+![Origination setup](screenshots/Screenshot10.png)
 
 #### Assign Phone Numbers
 - In your trunk menu, go to "Numbers"
@@ -269,7 +280,8 @@ Replace the following placeholders:
 
 ```bash
 # Connect to FreeSWITCH CLI
-fs_cli
+sudo chmod +x /usr/local/freeswitch/bin/fs_cli
+sudo /usr/local/freeswitch/bin/fs_cli
 
 # Inside the FreeSWITCH CLI, reload the SIP profile
 sofia profile external restart
@@ -281,7 +293,7 @@ sofia profile external restart
 
 ```bash
 # Check gateway status
-fs_cli -x "sofia status gateway twilio"
+sudo /usr/local/freeswitch/bin/fs_cli -x "sofia status gateway twilio"
 ```
 You should see the gateway status as "UP".
 
@@ -293,10 +305,10 @@ For Twilio trial accounts, you must first verify any phone number you want to ca
 
 ```bash
 # Make a test call (replace with a verified number)
-fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/TwilioTrunk0001/YOUR_VERIFIED_PHONE_NUMBER &echo"
+sudo /usr/local/freeswitch/bin/fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER &echo"
 ```
 
 ```bash
 # Format for E.164 (with country code, no spaces or hyphens)
-fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/TwilioTrunk0001/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
+sudo /usr/local/freeswitch/bin/fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
 ```
