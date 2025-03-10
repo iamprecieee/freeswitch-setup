@@ -15,12 +15,12 @@ This comprehensive guide will walk you through setting up FreeSWITCH on an AWS E
 ### Provision a Debian Instance
 
 - Launch a Debian EC2 instance with at least 1GB RAM (t2.micro or larger)
-[EC2 basic config](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot1.png)
+![EC2 basic config](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot1.png)
 - Configure Security Group with the following ports:
     - SSH (22) - TCP
     - SIP (5080) - TCP and UDP
     - RTP Media (16384-32768) - UDP
-    ![Security group config](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot2.png)
+    ![Security group config](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot2.png)
 
 ### Configure Security Group
 
@@ -91,7 +91,7 @@ echo "deb-src [signed-by=/usr/share/keyrings/signalwire-freeswitch-repo.gpg] \
 sudo apt update
 ```
 - `YOURSIGNALWIRETOKEN` can be created/retrieved from the signalwire dashboard under "personal access tokens".
-![Signalwire profile dropdown](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot3.png) ![Create PAT](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot4.png)
+![Signalwire profile dropdown](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot3.png) ![Create PAT](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot4.png)
 
 ### Install FreeSWITCH from Source
 
@@ -217,32 +217,32 @@ sudo sed -i "s/local_ip_v4=.*/local_ip_v4=YOUR_SERVER_PUBLIC_IP/" /usr/local/fre
 
 - Sign up at Twilio.com
 - Get a phone number from your Twilio Console
-![Get twilio number](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot5.png)
+![Get twilio number](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot5.png)
 
 ### Configure Elastic SIP Trunking
 
 - From your Twilio Console, navigate to "Explore Products" → "Super Network" → "Elastic SIP Trunking"
-![Elastic SIP trunking section](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot6.png)
+![Elastic SIP trunking section](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot6.png)
 - Click on "Trunks" and create a new SIP trunk with a descriptive name
-![Trunk](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot7.png)
+![Trunk](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot7.png)
 
 ### Configure your trunk:
 
 #### Termination (Outbound Calling)
 - In your trunk menu, go to "Termination"
-![Termination](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot8.png)
+![Termination](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot8.png)
 - Create a Termination SIP URI (e.g., "freeswitchtest")
 - Under "Authentication", create a new IP Access Control List:
     - Add a friendly name
     - Enter your EC2 instance's public IP with CIDR /32
     - Save the configuration
-    ![IP ACL](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot9.png)
+    ![IP ACL](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot9.png)
 
 #### Origination (Inbound Calling)
 - In your trunk menu, go to "Origination"
 - Add a new Origination URI in the format: `sip:YOUR_SERVER_PUBLIC_IP`
 - Save the configuration
-![Origination setup](https://github.com/iamprecieee/freeswitch-setup/raw/main/screenshots/Screenshot10.png)
+![Origination setup](https://raw.githubusercontent.com/iamprecieee/freeswitch-setup/main/screenshots/Screenshot10.png)
 
 #### Assign Phone Numbers
 - In your trunk menu, go to "Numbers"
