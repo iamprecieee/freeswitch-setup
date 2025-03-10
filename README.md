@@ -281,7 +281,8 @@ Replace the following placeholders:
 ```bash
 # Connect to FreeSWITCH CLI
 sudo chmod +x /usr/local/freeswitch/bin/fs_cli
-sudo /usr/local/freeswitch/bin/fs_cli
+sudo usermod -aG freeswitch admin
+fs_cli
 
 # Inside the FreeSWITCH CLI, reload the SIP profile
 sofia profile external restart
@@ -293,7 +294,7 @@ sofia profile external restart
 
 ```bash
 # Check gateway status
-sudo /usr/local/freeswitch/bin/fs_cli -x "sofia status gateway twilio"
+fs_cli -x "sofia status gateway twilio"
 ```
 You should see the gateway status as "UP".
 
@@ -305,10 +306,10 @@ For Twilio trial accounts, you must first verify any phone number you want to ca
 
 ```bash
 # Make a test call (replace with a verified number)
-sudo /usr/local/freeswitch/bin/fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER &echo"
+fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER &echo"
 ```
 
 ```bash
 # Format for E.164 (with country code, no spaces or hyphens)
-sudo /usr/local/freeswitch/bin/fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
+fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
 ```
