@@ -313,3 +313,34 @@ fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_
 # Format for E.164 (with country code, no spaces or hyphens)
 fs_cli -x "originate {ignore_early_media=true,origination_caller_id_number=YOUR_TWILIO_NUMBER}sofia/gateway/twilio/YOUR_VERIFIED_PHONE_NUMBER 1000 XML Twilio_Inbound"
 ```
+
+
+### ⚠️ For python-ESL error:
+- If SWIG 4.x is installed from your package manager, you may need to remove it or ensure that your PATH prioritizes the newly built SWIG.
+```bash
+sudo apt-get remove swig
+```
+
+- Download SWIG 3.0.12.
+```bash
+wget https://downloads.sourceforge.net/project/swig/swig/swig-3.0.12/swig-3.0.12.tar.gz
+```
+
+- Extract and Build SWIG 3.0.12.
+```bash
+tar -xzvf swig-3.0.12.tar.gz
+cd swig-3.0.12
+./configure
+make
+sudo make install
+```
+
+- Verify installation.
+```bash
+swig -version
+```
+
+- Reinstall python-ESL.
+```bash
+pip install python-ESL
+```
