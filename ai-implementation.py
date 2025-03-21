@@ -1,3 +1,4 @@
+
 import ESL
 import logging
 import os
@@ -8,13 +9,18 @@ import requests
 from dotenv import load_dotenv
 from io import BytesIO
 import re
-# from elevenlabs.client import ElevenLabs
+from elevenlabs.client import ElevenLabs
+# from elevenlabs import VoiceSettings
 from google.cloud import texttospeech, speech
+from typing import List, Dict, Optional
+from google import generativeai as genai
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('freeswitch_caller')
 
 load_dotenv("/home/admin/.env")
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 FREESWITCH_HOST = os.getenv("FREESWITCH_HOST")
 FREESWITCH_PORT = int(os.getenv("FREESWITCH_PORT"))
@@ -31,7 +37,7 @@ RECORDINGS_DIR = Path("/tmp/freeswitch_recordings")
 RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Initialize Eleven Labs client
-# client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
 
 # GOOEY_API_KEY = os.getenv("GOOEY_API_KEY")
 
@@ -301,44 +307,40 @@ def convert_text_to_audio(text, call_uuid):
     text = re.sub(r'\([^)]*\)', '', text)
     formatted_text = re.sub(r'\s+', ' ', text).strip()
     
-    client = texttospeech.TextToSpeechClient()
-    synthesis_input = texttospeech.SynthesisInput(text=formatted_text)
-    
-    voice = texttospeech.VoiceSelectionParams(
-        language_code="en-us",
-        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL,
-        name="en-US-Wavenet-A",
-    )
-    
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        effects_profile_id=["small-bluetooth-speaker-class-device"],
-        pitch=1,
-        speaking_rate=1,
-    )
-    
-    synthesize_speech_request = texttospeech.SynthesizeSpeechRequest(
-        input=synthesis_input, voice=voice, audio_config=audio_config
-    )
-
-    response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config
+    audio = client.text_to_speech.convert(
+        voice_id="JBFqnCBsd6RMkjVDRZzb", # Adam pre-made voice
+        output_format="mp3_44100_128",
+        text=formatted_text,
+        model_id="eleven_flash_v2_5", # use the turbo model for low latency
+        # Optional voice settings that allow you to customize the output
+        # voice_settings=VoiceSettings(
+        #     stability=0.0,
+        #     similarity_boost=1.0,
+        #     style=0.0,
+        #     use_speaker_boost=True,
+        #     speed=1.0,
+        # ),
     )
     
     with open(f"/tmp/freeswitch_recordings/output_{call_uuid}.wav", "wb") as out:
-        out.write(response.audio_content)
-        print(f'audio content written to file "/tmp/freeswitch_recordings/output_{call_uuid}.wav"')
+        for chunk in audio:
+            if chunk:
+                out.write(chunk)
+    print(f'audio content written to file "/tmp/freeswitch_recordings/output_{call_uuid}.wav"')
         
     return f"/tmp/freeswitch_recordings/output_{call_uuid}.wav"
-  
+
 
 def conversation_loop(conn, call_uuid, entire_call_recording_path, max_iterations=5):
     """
-    Continuously record the user's response, process it, and play the AI response.
+    Continuously record the user's response, process it with Gemini AI, and play the AI response.
     The loop continues until a maximum number of iterations is reached or
     no meaningful response is recorded.
     """
+
     iteration = 0
+    conversation_history = []  # Stores messages to maintain chat context
+
     while iteration < max_iterations:
         iteration += 1
         logger.info(f"\n--- Conversation iteration {iteration} ---")
@@ -361,22 +363,43 @@ def conversation_loop(conn, call_uuid, entire_call_recording_path, max_iteration
             logger.warning("Call hung up after recording, ending conversation loop")
             break
             
-        # Process the response
+        # Transcribe the response
         transcription = transcribe_audio(recorded_response)
-        logger.info(f"transcribed text: {transcription}")
-        
-        logger.info("Converting transcription to audio")
+        logger.info(f"Transcribed text: {transcription}")
+
+        # Maintain conversation history
+        conversation_history.append({"role": "user", "content": transcription})
+
+        # Get AI response
+        logger.info("Processing transcription with Gemini AI")
         try:
-            audio_response = convert_text_to_audio(transcription, call_uuid)
+            ai_response = process_call_context(
+                call_context=transcription, 
+                conversation_history=conversation_history
+            )
+        except Exception as e:
+            logger.warning(f"Failed to get AI response: {str(e)}")
+            continue
+        
+        logger.info(f"AI Response: {ai_response}")
+        
+        # Store AI response in conversation history
+        conversation_history.append({"role": "assistant", "content": ai_response})
+
+        # Convert AI response to speech
+        logger.info("Converting AI response to audio")
+        try:
+            audio_response = convert_text_to_audio(ai_response, call_uuid)
         except Exception as e:
             logger.warning(f"Failed to convert text to audio: {str(e)}")
             continue
 
-        logger.info("Playing audio response to client")
+        # Play AI response to the client
+        logger.info("Playing AI response to client")
         try:
             play_audio_file(conn, call_uuid, audio_response)
         except Exception as e:
-            logger.warning(f"Failed to play audio response to client: {str(e)}")
+            logger.warning(f"Failed to play AI response to client: {str(e)}")
             continue
 
     logger.info("Conversation loop ended.")
@@ -392,6 +415,78 @@ def conversation_loop(conn, call_uuid, entire_call_recording_path, max_iteration
         logger.info("Hanging up call")
         hangup_cmd = f"uuid_kill {call_uuid}"
         conn.api(hangup_cmd)
+        
+        
+def send_message_to_gemini(
+    messages: List[Dict[str, str]],
+    system_prompt: Optional[str] = None,
+    model: str = "gemini-1.5-pro-latest"
+) -> str:
+    """
+    Send messages to Google Gemini AI and get a response.
+
+    Args:
+        messages: List of message dictionaries with 'role' and 'content' keys
+        system_prompt: Custom system prompt to override default
+        model: Gemini model to use (default: "gemini-1.5-pro-latest")
+
+    Returns:
+        Response text from Gemini AI
+    """
+
+    # Default system prompt
+    default_system_prompt = """
+    You are an enthusiastic, engaging, and friendly AI guide. Your responses should be warm, 
+    concise, and natural — like a helpful friend! Keep the conversation fun and approachable. Do not use emojis and make your
+    response seem non-ai generated.
+    """
+
+    final_system_prompt = f"{default_system_prompt}\n\n{system_prompt}" if system_prompt else default_system_prompt
+
+    # Convert messages to Gemini's expected format (list of text parts)
+    message_texts = [msg["content"] for msg in messages]
+
+    try:
+        # Create the model
+        model_instance = genai.GenerativeModel(model)
+        response = model_instance.generate_content(
+            [final_system_prompt] + message_texts)
+
+        return response.text.strip()
+
+    except Exception as e:
+        print(f"Error calling Google Gemini API: {str(e)}")
+        return "I'm sorry, I'm having trouble processing your request right now. Please try again later."
+
+
+def process_call_context(
+    call_context: str,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
+    system_prompt: Optional[str] = None
+) -> str:
+    """
+    Process call context and get an appropriate response from Gemini AI.
+
+    Args:
+        call_context: The current context of the call to process
+        conversation_history: Previous messages in the conversation
+        system_prompt: Custom system prompt
+
+    Returns:
+        Response text from Gemini AI
+    """
+    if conversation_history is None:
+        conversation_history = []
+
+    messages = conversation_history + \
+        [{"role": "user", "content": call_context}]
+
+    response = send_message_to_gemini(
+        messages=messages,
+        system_prompt=system_prompt
+    )
+
+    return response
 
 
 if __name__ == "__main__":
