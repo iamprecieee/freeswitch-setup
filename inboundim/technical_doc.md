@@ -322,3 +322,4 @@ Each error case includes appropriate fallback behaviors and logging.
 3. Improved silence detection parameters
 4. Voice customization options
 5. Integration with CRM systems for context awareness
+6. Fastapi integration for connection to frontend
