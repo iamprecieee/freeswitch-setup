@@ -253,12 +253,12 @@ ELEVEN_LABS_MODEL_ID
 
 ### Systemd Service Setup
 
-The system is deployed as a systemd service for reliable operation and automatic restart. Create the following service file at `/etc/systemd/system/ai-calling-system.service`:
+The system is deployed as a systemd service for reliable operation and automatic restart. Create the following service file at `/etc/systemd/system/call-handler.service`:
 
 ```ini
 [Unit]
-Description=AI Inbound Calling System
-After=network.target
+Description=AI Inbound Call Handler
+After=network.target freeswitch.service
 
 [Service]
 User=user
@@ -266,7 +266,8 @@ Group=user
 WorkingDirectory=/PATH/TO/PROJECT/DIRECTORY
 ExecStart=/PATH/TO/VENV/bin/python3 /PATH/TO/PROJECT/DIRECTORY/main.py
 Restart=always
-RestartSec=10
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
@@ -278,22 +279,22 @@ Control the AI calling system with the following systemd commands:
 
 ```bash
 # Enable service to start on boot
-sudo systemctl enable ai-calling-system.service
+sudo systemctl enable call-handler.service
 
 # Start the service
-sudo systemctl start ai-calling-system.service
+sudo systemctl start call-handler.service
 
 # Check service status
-sudo systemctl status ai-calling-system.service
+sudo systemctl status call-handler.service
 
 # View real-time logs
-sudo journalctl -u ai-calling-system.service -f
+sudo journalctl -u call-handler.service -f
 
 # Restart the service
-sudo systemctl restart ai-calling-system.service
+sudo systemctl restart call-handler.service
 
 # Stop the service
-sudo systemctl stop ai-calling-system.service
+sudo systemctl stop call-handler.service
 ```
 
 ## Error Handling

@@ -1,3 +1,6 @@
+<!-- This will be in /PATH/TO/FREESWITCH/dialplan/public/africastalking.xml -->
+
+
 <include>
   <extension name="africastalking">
     <condition field="destination_number" expression="^\+?234\d+$">

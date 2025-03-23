@@ -1,3 +1,5 @@
+<!-- This will be in /PATH/TO/FREESWITCH/sip_profiles/public/africastalking.xml -->
+
 <include>
     <gateway name="africastalking">
     <param name="register" value="false"/>

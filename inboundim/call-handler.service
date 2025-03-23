@@ -1,0 +1,15 @@
+[Unit]
+Description=AI Inbound Call Handler
+After=network.target freeswitch.service
+
+[Service]
+User=user
+Group=user
+WorkingDirectory=/PATH/TO/PROJECT/DIRECTORY
+ExecStart=/PATH/TO/VENV/bin/python3 /PATH/TO/PROJECT/DIRECTORY/main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

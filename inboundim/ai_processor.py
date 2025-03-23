@@ -2,8 +2,8 @@
 # AI Speech and Language Processing Functions
 # =====================================================================
 
-from config import logger, ESL, genai, eleven_labs_client, ELEVEN_LABS_VOICE_ID, ELEVEN_LABS_MODEL_ID, RECORDINGS_DIR
 from google.cloud import speech
+from config import logger, ESL, genai, eleven_labs_client, ELEVEN_LABS_VOICE_ID, ELEVEN_LABS_MODEL_ID, RECORDINGS_DIR
 from typing import Optional, List, Dict
 import re
 
@@ -14,26 +14,29 @@ def transcribe_audio(file_path: str) -> str:
     """
     try:
         speech_client = speech.SpeechClient()
-        
+
         # Read the audio file
         with open(file_path, "rb") as audio_file:
             audio_data = audio_file.read()
             audio = speech.RecognitionAudio(content=audio_data)
-            
+
         # Configure the recognition request
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-            language_code='en-US'
+            language_code="en-US",
         )
-        
+
         # Perform the transcription
         response = speech_client.recognize(config=config, audio=audio)
 
         # Extract the transcript from the response
-        transcript = response.results[0].alternatives[0].transcript
-        logger.info(f"Transcript: {transcript}")
-        
-        return transcript
+        if response.results:
+            transcript = response.results[0].alternatives[0].transcript
+            logger.info(f"Transcript: {transcript}")
+            return transcript
+        else:
+            logger.warning("No transcription results")
+            return ""
 
     except Exception as e:
         logger.error(f"Error during transcription: {e}")
@@ -54,12 +57,9 @@ def process_call_context(
 
     # Add current message to conversation context
     messages = conversation_history + [{"role": "user", "content": call_context}]
-    
+
     # Generate response using Gemini
-    response = send_message_to_gemini(
-        messages=messages, 
-        system_prompt=system_prompt
-    )
+    response = send_message_to_gemini(messages=messages, system_prompt=system_prompt)
 
     return response
 

@@ -8,7 +8,6 @@ from pathlib import Path
 
 # Third-party dependencies
 import ESL
-import requests
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
 from google import generativeai as genai
@@ -18,31 +17,28 @@ BASE_DIR = Path(__file__).resolve().parent
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-logger = logging.getLogger('freeswitch_caller')
+logger = logging.getLogger("freeswitch_inbound_ai")
 
 # Load environment variables
 load_dotenv(f"{BASE_DIR}/.env")
 
-# Server config
+# Socket server settings
 SERVER_HOST = os.getenv("SERVER_HOST")
-SERVER_PORT = os.getenv("SERVER_PORT")
+SERVER_PORT = int(os.getenv("SERVER_PORT"))
 
 # Set up API credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-    f"{BASE_DIR}/.google-cred.json"
-)
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = f"{BASE_DIR}/.google-cred.json"
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # FreeSWITCH connection settings
-FREESWITCH_HOST = os.getenv("FREESWITCH_HOST")
-FREESWITCH_PORT = int(os.getenv("FREESWITCH_PORT"))
-FREESWITCH_PASSWORD = os.getenv("FREESWITCH_PASSWORD")
+FREESWITCH_HOST = os.getenv("FREESWITCH_HOST", "127.0.0.1")
+FREESWITCH_PORT = int(os.getenv("FREESWITCH_PORT", "8021"))
+FREESWITCH_PASSWORD = os.getenv("FREESWITCH_PASSWORD", "ClueCon")
 
 # Audio paths and settings
-INITIAL_GREETING = Path("/tmp/freeswitch/welcome.wav")
+INITIAL_GREETING = Path(os.getenv("INITIAL_GREETING", "/tmp/freeswitch/welcome.wav"))
 RECORDINGS_DIR = Path("/tmp/freeswitch/recordings")
 RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR = Path("/tmp/freeswitch/output")
