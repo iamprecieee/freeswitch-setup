@@ -1,0 +1,15 @@
+<include>
+    <gateway name="africastalking">
+    <param name="register" value="false"/>
+    <param name="proxy" value="ng.sip.africastalking.com"/>
+    <param name="context" value="public"/>
+    <param name="from-user" value="example"/>
+    <param name="from-domain" value="ng.sip.africastalking.com"/>
+    <param name="realm" value="ng.sip.africastalking.com"/>
+    <param name="auth-calls" value="false"/>
+    <param name="sip-auth-user" value=""/>
+    <param name="sip-auth-password" value=""/>
+    <param name="codec-prefs" value="PCMU,PCMA"/>
+    <param name="dtmf-type" value="rfc2833"/>
+  </gateway>
+</include>
